@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import ProductCard from '../components/ProductCard';
+import React, { useEffect, useState } from "react";
+import ProductCard from "../components/ProductCard";
 
 const Home = () => {
   const [products, setProducts] = useState([]);
@@ -8,9 +8,9 @@ const Home = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch('/api/products');
+        const res = await fetch("/api/products");
         const data = await res.json();
-        setProducts(data.slice(0, 4)); // Featured products
+        setProducts(data.slice(0, 8)); // Featured products
       } catch (error) {
         console.error(error);
       } finally {
