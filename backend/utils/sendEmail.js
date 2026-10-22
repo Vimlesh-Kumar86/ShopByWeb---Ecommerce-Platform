@@ -29,29 +29,85 @@
 
 
 
+// const nodemailer = require('nodemailer');
+
+// const sendEmail = async ({ email, subject, message }) => {
+//   try {
+//     const transporter = nodemailer.createTransport({
+//       service: 'gmail',
+//       auth: {
+//         user: process.env.GMAIL_USER,
+//         pass: process.env.GMAIL_PASS, // App Password mapping
+//       },
+//     });
+
+//     const mailOptions = {
+//       from: `"ShopNest Support" <${process.env.GMAIL_USER}>`,
+//       to: email,
+//       subject: subject,
+//       html: message,
+//     };
+
+//     await transporter.sendMail(mailOptions);
+//     console.log(`Email successfully sent to ${email}`);
+//   } catch (error) {
+//     console.error(`Failed to send email to ${email}: ${error.message}`);
+//   }
+// };
+
+// module.exports = sendEmail;
+
+
+
+
+
+
+
+
 const nodemailer = require('nodemailer');
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS,
+  },
+
+  // Prevent email operations from waiting too long
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
+});
 
 const sendEmail = async ({ email, subject, message }) => {
   try {
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS, // App Password mapping
-      },
-    });
+    if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
+      throw new Error(
+        'GMAIL_USER or GMAIL_PASS is missing in environment variables'
+      );
+    }
 
     const mailOptions = {
-      from: `"ShopNest Support" <${process.env.GMAIL_USER}>`,
+      from: `"ShopByWeb Support" <${process.env.GMAIL_USER}>`,
       to: email,
-      subject: subject,
+      subject,
       html: message,
     };
 
-    await transporter.sendMail(mailOptions);
+    const info = await transporter.sendMail(mailOptions);
+
     console.log(`Email successfully sent to ${email}`);
+
+    return info;
   } catch (error) {
-    console.error(`Failed to send email to ${email}: ${error.message}`);
+    console.error(
+      `Failed to send email to ${email}:`,
+      error.message
+    );
+
+    // Allow the calling controller to handle the failure
+    throw error;
   }
 };
 

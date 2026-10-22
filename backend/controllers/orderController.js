@@ -78,6 +78,169 @@
 
 
 
+// const Order = require('../models/Order');
+// const sendEmail = require('../utils/sendEmail');
+
+// const addOrderItems = async (req, res) => {
+//   try {
+//     const { items, totalAmount, address, paymentId } = req.body;
+
+//     // Validate request
+//     if (!items || items.length === 0) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'No order items'
+//       });
+//     }
+
+//     // Create Order
+//     const order = new Order({
+//       userId: req.user._id,
+//       items,
+//       totalAmount,
+//       address,
+//       paymentId
+//     });
+
+//     // Save Order
+//     const createdOrder = await order.save();
+
+//     // Email Content
+//     const message = `
+//       <h2>Order Confirmation 🎉</h2>
+
+//       <p>Hello <strong>${req.user.name}</strong>,</p>
+
+//       <p>Your order has been successfully placed.</p>
+
+//       <p><strong>Order ID:</strong> ${createdOrder._id}</p>
+
+//       <p><strong>Total Amount:</strong> ₹${totalAmount}</p>
+
+//       <p>
+//         <strong>Shipping Address:</strong><br>
+//         ${address?.street || ''}<br>
+//         ${address?.city || ''}<br>
+//         ${address?.state || ''}<br>
+//         ${address?.postalCode || ''}<br>
+//         ${address?.country || ''}
+//       </p>
+
+//       <p>Thank you for shopping with <strong>ShopNest</strong>.</p>
+//     `;
+
+//     // Email should not stop order creation
+//     try {
+//       await sendEmail({
+//         email: req.user.email,
+//         subject: 'ShopNest - Order Confirmation',
+//         message
+//       });
+
+//       console.log("✅ Order confirmation email sent.");
+//     } catch (emailError) {
+//       console.log("⚠ Email skipped:", emailError.message);
+//     }
+
+//     res.status(201).json({
+//       success: true,
+//       message: "Order placed successfully",
+//       order: createdOrder
+//     });
+
+//   } catch (error) {
+//     console.error("Order Error:", error);
+
+//     res.status(500).json({
+//       success: false,
+//       message: error.message
+//     });
+//   }
+// };
+
+// const getMyOrders = async (req, res) => {
+//   try {
+//     const orders = await Order.find({ userId: req.user._id });
+//     res.json(orders);
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({
+//       success: false,
+//       message: error.message
+//     });
+//   }
+// };
+
+// const getOrders = async (req, res) => {
+//   try {
+//     const orders = await Order.find({}).populate('userId', 'id name');
+//     res.json(orders);
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({
+//       success: false,
+//       message: error.message
+//     });
+//   }
+// };
+
+// const updateOrderStatus = async (req, res) => {
+//   try {
+//     const order = await Order.findById(req.params.id);
+
+//     if (!order) {
+//       return res.status(404).json({
+//         success: false,
+//         message: 'Order not found'
+//       });
+//     }
+
+//     order.status = req.body.status || order.status;
+
+//     const updatedOrder = await order.save();
+
+//     res.json({
+//       success: true,
+//       message: 'Order updated successfully',
+//       order: updatedOrder
+//     });
+
+//   } catch (error) {
+//     console.error(error);
+
+//     res.status(500).json({
+//       success: false,
+//       message: error.message
+//     });
+//   }
+// };
+
+// module.exports = {
+//   addOrderItems,
+//   getMyOrders,
+//   getOrders,
+//   updateOrderStatus
+// };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const Order = require('../models/Order');
 const sendEmail = require('../utils/sendEmail');
 
@@ -85,38 +248,38 @@ const addOrderItems = async (req, res) => {
   try {
     const { items, totalAmount, address, paymentId } = req.body;
 
-    // Validate request
-    if (!items || items.length === 0) {
+    if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'No order items'
+        message: 'No order items',
       });
     }
 
-    // Create Order
-    const order = new Order({
+    if (
+      typeof totalAmount !== 'number' ||
+      !Number.isFinite(totalAmount) ||
+      totalAmount <= 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid order amount',
+      });
+    }
+
+    const createdOrder = await Order.create({
       userId: req.user._id,
       items,
       totalAmount,
       address,
-      paymentId
+      paymentId,
     });
 
-    // Save Order
-    const createdOrder = await order.save();
-
-    // Email Content
     const message = `
-      <h2>Order Confirmation 🎉</h2>
-
-      <p>Hello <strong>${req.user.name}</strong>,</p>
-
-      <p>Your order has been successfully placed.</p>
-
+      <h2>Order Confirmation</h2>
+      <p>Hello <strong>${req.user.name || 'Customer'}</strong>,</p>
+      <p>Your order has been placed successfully.</p>
       <p><strong>Order ID:</strong> ${createdOrder._id}</p>
-
       <p><strong>Total Amount:</strong> ₹${totalAmount}</p>
-
       <p>
         <strong>Shipping Address:</strong><br>
         ${address?.street || ''}<br>
@@ -125,61 +288,69 @@ const addOrderItems = async (req, res) => {
         ${address?.postalCode || ''}<br>
         ${address?.country || ''}
       </p>
-
-      <p>Thank you for shopping with <strong>ShopNest</strong>.</p>
+      <p>Thank you for shopping with ShopByWeb!</p>
     `;
 
-    // Email should not stop order creation
-    try {
-      await sendEmail({
-        email: req.user.email,
-        subject: 'ShopNest - Order Confirmation',
-        message
-      });
-
-      console.log("✅ Order confirmation email sent.");
-    } catch (emailError) {
-      console.log("⚠ Email skipped:", emailError.message);
-    }
-
+    // Send the response as soon as the order is saved
     res.status(201).json({
       success: true,
-      message: "Order placed successfully",
-      order: createdOrder
+      message: 'Order placed successfully',
+      order: createdOrder,
+    });
+
+    // Email sending must not block the response
+    sendEmail({
+      email: req.user.email,
+      subject: 'ShopByWeb - Order Confirmation',
+      message,
+    }).catch((emailError) => {
+      console.error(
+        'Order confirmation email failed:',
+        emailError.message
+      );
     });
 
   } catch (error) {
-    console.error("Order Error:", error);
+    console.error('Order creation error:', error);
 
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        message: 'Unable to place order. Please try again.',
+      });
+    }
   }
 };
 
 const getMyOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ userId: req.user._id });
-    res.json(orders);
+    const orders = await Order.find({
+      userId: req.user._id,
+    });
+
+    return res.json(orders);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({
+    console.error('Get my orders error:', error);
+
+    return res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Unable to fetch your orders',
     });
   }
 };
 
 const getOrders = async (req, res) => {
   try {
-    const orders = await Order.find({}).populate('userId', 'id name');
-    res.json(orders);
+    const orders = await Order.find({})
+      .populate('userId', 'name email');
+
+    return res.json(orders);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({
+    console.error('Get orders error:', error);
+
+    return res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Unable to fetch orders',
     });
   }
 };
@@ -191,7 +362,7 @@ const updateOrderStatus = async (req, res) => {
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: 'Order not found'
+        message: 'Order not found',
       });
     }
 
@@ -199,18 +370,17 @@ const updateOrderStatus = async (req, res) => {
 
     const updatedOrder = await order.save();
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Order updated successfully',
-      order: updatedOrder
+      order: updatedOrder,
     });
-
   } catch (error) {
-    console.error(error);
+    console.error('Update order error:', error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Unable to update order',
     });
   }
 };
@@ -219,5 +389,5 @@ module.exports = {
   addOrderItems,
   getMyOrders,
   getOrders,
-  updateOrderStatus
+  updateOrderStatus,
 };
